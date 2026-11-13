@@ -1,0 +1,44 @@
+# ---- 依存・キャッシュ・ビルド生成物 ----
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+
+# ---- 外部リポジトリ（scripts/setup_third_party.sh で取得） ----
+third_party/privacy-filter-jp.cpp/
+third_party/openai-privacy-filter-repo/
+
+# ---- モデル重み（scripts/download_models.sh で取得。GitHub に置かない） ----
+models/
+checkpoints/
+*.safetensors
+*.gguf
+*.bin
+*.pt
+*.pth
+*.onnx
+
+# ---- 実行結果・ログ・生成データ ----
+runs/
+data/*/
+!data/public_bench/
+eval/
+configs/frozen_conditions*.json
+
+# ---- 秘密情報・ローカル設定（絶対にコミットしない） ----
+.env
+.env.*
+*.key
+*.pem
+api-key*
+auth.json
+*credentials*
+
+# ---- OS / エディタ ----
+.DS_Store
+.idea/
+.vscode/
+*.egg-info/
+build/
+dist/

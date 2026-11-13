@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "toramon-mask"
+version = "0.1.0"
+description = "日本語の業務文書から個人情報・認証情報を検出してマスキングする OSS（Toramon Mask）。ローカルで動作し外部通信なし"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
+# ホスト側（torch 不要）の依存。学習・HF 推論は Docker コンテナ（env/Dockerfile）で行う。
+dependencies = [
+  "numpy>=2.0",
+  "gguf>=0.19",
+  "safetensors>=0.5",
+  "pyyaml>=6.0",
+  "jsonschema>=4.20",
+  "regex>=2024.1",
+  "fastapi>=0.110",
+  "uvicorn>=0.30",
+  "tiktoken>=0.8",
+  "huggingface_hub>=0.30",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,16 @@
+diff --git a/src/backend.cpp b/src/backend.cpp
+index b713dc2..5f82da8 100644
+--- a/src/backend.cpp
++++ b/src/backend.cpp
+@@ -94,7 +94,10 @@ bool engine_backend::init(const std::string & device_req, int n_threads) {
+         int gpu_idx = 0;
+         for (size_t i = 0; i < ggml_backend_dev_count(); i++) {
+             ggml_backend_dev_t dev = ggml_backend_dev_get(i);
+-            if (ggml_backend_dev_type(dev) != GGML_BACKEND_DEVICE_TYPE_GPU) continue;
++            // Toramon patch (2026-11-09): DGX Spark GB10 は cudaDeviceProp.integrated=1 のため
++            // ggml が GGML_BACKEND_DEVICE_TYPE_IGPU を返す。統合 GPU も GPU として受け付ける。
++            const auto dt = ggml_backend_dev_type(dev);
++            if (dt != GGML_BACKEND_DEVICE_TYPE_GPU && dt != GGML_BACKEND_DEVICE_TYPE_IGPU) continue;
+             if (!want_reg.empty()) {
+                 const char * reg = ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev));
+                 if (!reg || lower(reg) != want_reg) continue;

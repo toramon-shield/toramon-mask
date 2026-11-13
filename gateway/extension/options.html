@@ -1,0 +1,11 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>Toramon Mask 設定</title>
+<style>body{font:14px/1.7 sans-serif;padding:14px;min-width:320px}label{display:block;margin-bottom:6px}input{width:100%;padding:6px;font:inherit}button{margin-top:10px;padding:6px 12px;font:inherit}#s{color:#1f5f4a;margin-left:8px}</style></head>
+<body>
+<label>Toramon Gateway の URL<input id="gw" type="text" placeholder="http://127.0.0.1:8787"></label>
+<button id="save">保存</button><span id="s"></span>
+<p>貼り付けと Enter 送信の直前に、この URL の /redact で個人情報を伏せます。接続できないときは貼り付け・送信を止めます。</p>
+<script>
+const d={gateway:"http://127.0.0.1:8787"};
+chrome.storage.sync.get(d,v=>{document.getElementById("gw").value=v.gateway});
+document.getElementById("save").onclick=()=>{chrome.storage.sync.set({gateway:document.getElementById("gw").value||d.gateway},()=>{document.getElementById("s").textContent="保存しました"})};
+</script></body></html>

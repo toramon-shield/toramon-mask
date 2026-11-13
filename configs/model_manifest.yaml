@@ -1,0 +1,53 @@
+# 元モデル manifest（取得日 2026-11-09、HF API で確認したリビジョン）
+# 公開資料のスコアは背景情報。自前再測定と混ぜない。
+models:
+  O:
+    name: OpenAI privacy-filter (オリジナル)
+    hf_repo: openai/privacy-filter
+    hf_revision: 7ffa9a043d54d1be65afb281eddf0ffbe629385b
+    hf_last_modified: "2026-04-22T16:50:17Z"
+    fetched_at: "2026-11-09"
+    license: Apache-2.0
+    local_dir: models/openai-privacy-filter
+    files:
+      hf_transformers_weights: {path: model.safetensors, sha256: 06f66b87650b988b04e218285f9fe3df6a4943416b6ffa8171f07bc56cf12a9d, dtype: bfloat16}
+      opf_original_weights: {path: original/model.safetensors, sha256: 9c262cbe68a0c8a50590a648ef8341a2b7d3be1fa11dfb79893fe0b03ce57b5c, dtype: bfloat16 (attn.sinks f32)}
+      opf_original_config: {path: original/config.json, sha256: 048a20604a3622de208d30df57cd5424bb583639b9ba20ddd7da593d3f89a248}
+      viterbi_calibration: {path: viterbi_calibration.json, sha256: bbc8611ef08a55ed72d64856cbbbb9a91db8dfa881f0a92e2afbad6e4bbc775a}
+      tokenizer: {path: tokenizer.json, sha256: 0614fe83cadab421296e664e1f48f4261fa8fef6e03e63bb75c20f38e37d07d3, encoding: o200k_base}
+    architecture: 8層 MoE(128 experts, top-4) 双方向バンド注意(半径128) d_model 640, 14q/2kv heads, 約1.5B params / 50M active
+    labels: 33 クラス (O + 8 カテゴリ × B/I/E/S), category_version v2
+    decoder: 公式 opf ViterbiCRFDecoder（遷移制約 + viterbi_calibration.json の 6 バイアス）。argmax は補助。
+    runtime: opf (PyTorch, 固定コミット f7f00ca7fb869683eb732c010299d901457f19c3) / transformers 5.22.2 (OpenAIPrivacyFilterForTokenClassification)
+    postprocess_inseparable: opf 既定の空白トリム（trim_whitespace=True）。無効化可能。
+    threshold: なし（Viterbi 経路で決定）。運用点は遷移バイアスで調整。
+    public_scores_background_only: "sumeshi README: eval2 0.366 / challenge2 0.400（sumeshi 側の後処理込み）"
+  S:
+    name: sumeshi privacy-filter-jp (日本語版, GGUF)
+    hf_repo: sumeshi/privacy-filter-jp-GGUF
+    hf_revision: 0c21b7fbebadb729d99893b4b58275c87f128e93
+    hf_last_modified: "2026-07-03T10:00:43Z"
+    fetched_at: "2026-11-09"
+    license: Apache-2.0（モデル）/ MIT（privacy-filter-jp.cpp ランタイム）
+    local_dir: models/sumeshi-privacy-filter-jp-GGUF
+    files:
+      f16: {path: privacy-filter-jp-f16.gguf, sha256: e2bafc05ef7e6beb354e78cd77c8cfb5101d55044f23b2cdf343731a882f3b1c, precision: "F16 (重み行列) + F32 (norm/bias/sinks/router)", role: 主基準}
+      q8: {path: privacy-filter-jp-q8.gguf, sha256: de9499518ade053d65d20c2eaae2833954e114d29dd77fa7466dade782da9cd6, precision: "experts のみ Q8_0", role: 配備時補助評価}
+    lineage: openai/privacy-filter → OpenMed/privacy-filter-multilingual (sha f914f18d909d541d288dfda44a4d0b6bdb638d57, 54 カテゴリ/217 クラス, 全体 fine-tune) → sumeshi jp v2 (experts/embedding 凍結, 約90M 更新, 3 epoch, lr 1e-4, bs 8, max_len 384, 約34,000 行)
+    labels: 225 クラス = OpenMed 217 + 追加 8 (B/I/E/S-private_address, B/I/E/S-private_person)。private_email/phone/url/date/account_number/secret は OpenMed の EMAIL/PHONE/URL/DATE(+DATEOFBIRTH)/BANKACCOUNT(+ACCOUNTNAME)/PASSWORD 行に alias して学習。
+    decoder: privacy-filter-jp.cpp の制約付き BIOES Viterbi（遷移バイアスなし）+ span 平均確率 threshold（既定 0.5）
+    runtime: privacy-filter-jp.cpp commit fc5ea7dd04ecac978c377cb77fe144dcab71379a（ggml 3af5f576）, CUDA backend ビルド
+    postprocess_inseparable:
+      - "pf_classify 内: span 端の ASCII 空白・U+3000 トリム、先頭 '=' 除去、private_person の区切り文字（、，,・／/（）()|｜）での分割（C API から無効化不可）"
+      - "ラベル名は OpenMed 名（EMAIL 等）で返る → 共通 8 カテゴリへの対応表が必要（label_mapping.yaml）"
+      - "出力オフセットは UTF-8 バイト位置 → コードポイント位置へ変換が必要"
+    threshold: 0.5（既定）。dev で調整の機会を与える。
+    public_scores_background_only: "README: eval2 0.717 / challenge2 0.693（106 例、作者計測）"
+  T-O:
+    name: Toramon Mask (OpenAI 起点)
+    init_from: O.opf_original_weights
+    status: 未着手
+  T-S:
+    name: Toramon Mask (sumeshi 起点)
+    init_from: "S.f16 → HF 形式へ逆変換（models/sumeshi-privacy-filter-jp-hf-from-f16, model.safetensors sha256 36a020f1af806c1407e9b00b14613b37f82ad59cff177dcf4dcaae1f3c1df34d）。F16→bf16 は全要素で正確（再丸め 0）、logits argmax 一致 100%、span 一致 98/98。詳細 runs/ts_convert/parity_report.md"
+    status: 初期化チェックポイント確保済み（配布 GGUF と数値一致を検証）。学習は未着手

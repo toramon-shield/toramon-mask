@@ -1,0 +1,15 @@
+diff --git a/scripts/requant_q8.py b/scripts/requant_q8.py
+index 0a89c11..4eb5840 100644
+--- a/scripts/requant_q8.py
++++ b/scripts/requant_q8.py
+@@ -36,7 +36,9 @@ def main() -> int:
+         VT.FLOAT64: w.add_float64, VT.BOOL: w.add_bool, VT.STRING: w.add_string,
+     }
+     for key, field in r.fields.items():
+-        if key == "general.architecture":
++        if key == "general.architecture" or key.startswith("GGUF."):
++            # GGUF.version / tensor_count / kv_count は GGUFReader が合成する擬似フィールド。KV として書くと
++            # 読み戻し時に "Duplicate GGUF.version" で落ちる（Toramon 2026-11-11 修正）
+             continue
+         val = field.contents()
+         if field.types and field.types[0] == VT.ARRAY:

@@ -1,0 +1,43 @@
+Toramon Mask
+Copyright 2026 Toramon Mask contributors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+---------------------------------------------------------------------------
+Third-party components and data
+---------------------------------------------------------------------------
+
+This repository does not bundle model weights or third-party source code.
+The following are downloaded by scripts and are subject to their own licenses.
+
+1. openai/privacy-filter (model weights and the "opf" reference code)
+   https://huggingface.co/openai/privacy-filter
+   https://github.com/openai/privacy-filter
+   License: Apache License 2.0
+
+2. sumeshi/privacy-filter-jp-GGUF (Japanese fine-tuned model, GGUF)
+   https://huggingface.co/sumeshi/privacy-filter-jp-GGUF
+   License: Apache License 2.0
+
+3. sumeshi/privacy-filter-jp.cpp (GGUF inference runtime, with ggml)
+   https://github.com/sumeshi/privacy-filter-jp.cpp
+   License: MIT License (ggml: MIT License)
+   env/patches/*.patch are small modifications to this project and are
+   provided under the same MIT License.
+
+The following data is included in this repository:
+
+4. data/public_bench/sumeshi_*.jsonl
+   Converted (format only) from the benchmark files in
+   sumeshi/privacy-filter-jp.cpp (datasets/benchmark/), MIT License,
+   Copyright (c) 2026 the privacy-filter.cpp authors. Used for diagnostics only.
+
+Datasets that the scripts can process but that are NOT included here:
+
+5. llm-jp/databricks-dolly-15k-ja (CC BY-SA 3.0), derived from
+   databricks/databricks-dolly-15k (CC BY-SA 3.0).
+   Any dataset you build from it with scripts/make_dolly_*.py must be
+   distributed under CC BY-SA 3.0.
+
+6. nvidia/Nemotron-PII-Japan (CC BY 4.0). Attribution is required when
+   redistributing converted data.

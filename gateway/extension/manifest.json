@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Toramon Mask for Web AI",
+  "version": "0.1.0",
+  "description": "ChatGPT / Claude / Gemini / Copilot の Web 画面に貼り付ける・送信する文章の個人情報を、端末内の Toramon Gateway で伏せてから送ります。",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "http://127.0.0.1:8787/*",
+    "https://chatgpt.com/*", "https://chat.openai.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
+    "https://copilot.microsoft.com/*", "https://m365.cloud.microsoft/*"
+  ],
+  "content_scripts": [{
+    "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*", "https://claude.ai/*", "https://gemini.google.com/*", "https://copilot.microsoft.com/*", "https://m365.cloud.microsoft/*"],
+    "js": ["content.js"],
+    "run_at": "document_idle"
+  }],
+  "options_ui": { "page": "options.html", "open_in_tab": false },
+  "icons": {}
+}

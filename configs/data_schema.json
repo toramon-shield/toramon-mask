@@ -1,0 +1,271 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "toramon-mask/document.v0.1",
+  "title": "Toramon Mask 注釈付き文書（JSONL 1 行）",
+  "type": "object",
+  "required": [
+    "id",
+    "split",
+    "scenario_family",
+    "template_family",
+    "generator_model",
+    "prompt_version",
+    "text",
+    "entities",
+    "review_status",
+    "provenance"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{3,80}$"
+    },
+    "split": {
+      "enum": [
+        "pilot",
+        "train",
+        "dev",
+        "test",
+        "quarantine",
+        "dolly"
+      ]
+    },
+    "scenario_family": {
+      "type": "string",
+      "description": "シナリオ群 ID。同じ家族は同じ split に置く（分割漏洩防止の単位）"
+    },
+    "template_family": {
+      "type": "string",
+      "description": "テンプレート骨格 ID。同じ骨格は同じ split"
+    },
+    "value_pool": {
+      "type": "string",
+      "description": "固有値プール ID（氏名・住所・番号の供給元）。同じプールは同じ split"
+    },
+    "generator_model": {
+      "type": "string",
+      "description": "実際に使った生成モデル ID（例: gpt-6.1-terra, gemini-3.8-flash-high, claude-sonnet-4-6）。代役は別名で記録"
+    },
+    "generator_route": {
+      "type": "string",
+      "description": "経路（codex-cli, agy-cli, api 等）"
+    },
+    "prompt_version": {
+      "type": "string"
+    },
+    "domain": {
+      "type": "string",
+      "description": "業務分野（email, chat, minutes, inquiry, application, hr, billing, contract, json_csv, log_config, other）"
+    },
+    "doc_type": {
+      "type": "string"
+    },
+    "length_band": {
+      "enum": [
+        "short",
+        "normal",
+        "long",
+        "xlong"
+      ],
+      "description": "short<200, normal 200-2000, long 2000-10000, xlong>=10000 文字"
+    },
+    "difficulty": {
+      "enum": [
+        "easy",
+        "medium",
+        "hard"
+      ]
+    },
+    "negative_type": {
+      "enum": [
+        "none",
+        "no_pii",
+        "pii_lookalike"
+      ],
+      "description": "負例種別。none は PII あり文書"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "text",
+          "label",
+          "action",
+          "entity_id"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "start": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Unicode コードポイント単位、0 始まり"
+          },
+          "end": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "終了位置（含まない）"
+          },
+          "text": {
+            "type": "string",
+            "description": "text[start:end] と一致すること"
+          },
+          "label": {
+            "enum": [
+              "private_person",
+              "private_address",
+              "private_email",
+              "private_phone",
+              "private_date",
+              "account_number",
+              "private_url",
+              "secret",
+              "ext_company",
+              "ext_project",
+              "ext_health",
+              "ext_other"
+            ]
+          },
+          "action": {
+            "enum": [
+              "MASK",
+              "KEEP",
+              "REVIEW"
+            ],
+            "description": "Toramon 保護方針上の扱い。KEEP は『種類は該当するが今回の方針では伏せない』、REVIEW は保留"
+          },
+          "entity_id": {
+            "type": "string",
+            "description": "同一文書内の同一実体 ID（例: person-001）。文書間で共有しない"
+          },
+          "subtype": {
+            "type": "string",
+            "description": "任意。例: furigana, joint_name, my_number, postal_code_only, api_key"
+          },
+          "source": {
+            "enum": [
+              "placeholder",
+              "reviewer_added",
+              "human_added"
+            ],
+            "description": "挿入値由来か、レビューで追加されたか"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "review_status": {
+      "enum": [
+        "unreviewed",
+        "auto_reviewed",
+        "auto_reviewed_disagreement",
+        "human_verified",
+        "quarantined"
+      ]
+    },
+    "reviews": {
+      "type": "array",
+      "description": "独立レビュー結果（生成元以外の 2 系統）。照合前の生レビューを保持",
+      "items": {
+        "type": "object",
+        "required": [
+          "reviewer_model",
+          "reviewed_at",
+          "verdict"
+        ],
+        "properties": {
+          "reviewer_model": {
+            "type": "string"
+          },
+          "reviewed_at": {
+            "type": "string"
+          },
+          "verdict": {
+            "enum": [
+              "agree",
+              "disagree",
+              "cannot_review"
+            ]
+          },
+          "findings": {
+            "type": "array"
+          },
+          "raw_output_ref": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "created_at",
+        "pipeline_version",
+        "synthetic"
+      ],
+      "properties": {
+        "created_at": {
+          "type": "string"
+        },
+        "pipeline_version": {
+          "type": "string"
+        },
+        "synthetic": {
+          "const": true
+        },
+        "generation_job_id": {
+          "type": "string"
+        },
+        "temperature": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "tokens_in": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "tokens_out": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "cost_jpy": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "retries": {
+          "type": "integer"
+        },
+        "placeholder_doc_ref": {
+          "type": "string",
+          "description": "プレースホルダ付き元文書への参照"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

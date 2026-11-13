@@ -1,0 +1,25 @@
+# 受入基準（初期目標値）。最終テストを開く前に凍結する。変更は理由と日付を残し、最終テストを見て下げない。
+version: "0.1-draft"
+status: frozen   # frozen にするときは frozen_at と frozen_by を記入
+frozen_at: "2026-11-11T02:29:37.640116+09:00"
+scope: "この日本語業務文書セット（合成、Toramon 保護方針、本処理条件）での改善。実務文書への一般化は主張しない"
+primary_eval_split: locked_test
+selection_split: dev
+important_categories: [private_person, private_address, private_phone, private_email, account_number, secret]   # 全範囲保護率 99% 目標の対象（評価前に固定）
+model_goals:   # 追加ルールなしのモデル比較層
+  strict_micro_f1_gain_over_tuned_S_points: 3.0
+  f1_diff_ci95_lower_bound_gt: 0.0
+  full_coverage_rate_max_regression_points: 0.5
+filter_goals: # 共通ルール R 適用の比較層（S+R が基準）
+  pii_remaining_doc_rate_relative_reduction_min: 0.25
+  pii_remaining_diff_ci95_lower_bound_gt: 0.0
+  nontarget_char_mask_rate_max: 0.005
+  nontarget_char_mask_rate_max_increase_points: 0.1
+  negative_doc_fp_rate_max: 0.02
+  important_category_full_coverage_min: 0.99
+  latency_p95_ms_1000chars_warm_conc1_max: 1000
+reporting_rules:
+  - モデル目標未達・製品目標達成なら「ルール込みのフィルタとして改善」とのみ報告する
+  - 相対改善の基準値が 0 なら相対率を定義しない
+  - 人手確認済みデータが不足する場合は「合成データ上の評価」に結論を限定する
+  - 多数候補の同時優位主張では多重比較を考慮する

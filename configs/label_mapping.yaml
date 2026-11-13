@@ -1,0 +1,59 @@
+# ラベル対応表（Toramon Mask 共通 8 カテゴリ ⇔ 各モデルの出力ラベル）
+# 版: 2026-11-09 v0.1。評価器はこの表で各モデルの出力を共通カテゴリへ写像してから採点する。
+# 「種類（label）」と「伏せるべきか（action）」は別管理。action は annotation_policy.md の規則で決める。
+version: "0.1"
+common_categories:
+  - private_person
+  - private_address
+  - private_email
+  - private_phone
+  - private_date
+  - account_number
+  - private_url
+  - secret
+
+# O: openai/privacy-filter (category_version v2) は共通カテゴリと同名。恒等写像。
+model_O:
+  identity: true
+  notes:
+    - "private_date は元モデルの方針では『個人に関連し得る日付』を広く検出する傾向。Toramon 方針の action=KEEP な日付（公開日程・納期等）が検出された場合は評価上 FP になる。差分は report で別掲する。"
+
+# S: sumeshi GGUF の出力ラベル（OpenMed 217 + 追加 8 = 225 クラス）→ 共通カテゴリ
+# 作者の評価スクリプト scripts/run_pf_hf.py の CATEGORY_MAP に準拠し、対象外カテゴリは drop（検出しても採点対象外）。
+model_S:
+  map:
+    private_person: private_person
+    private_address: private_address
+    # alias 学習された OpenMed 行
+    EMAIL: private_email
+    PHONE: private_phone
+    URL: private_url
+    DATE: private_date
+    DATEOFBIRTH: private_date
+    TIME: private_date          # 作者 CATEGORY_MAP に従う。Toramon 方針では時刻単体は KEEP のため、dev で drop との差を測る
+    BANKACCOUNT: account_number
+    ACCOUNTNAME: account_number
+    IBAN: account_number
+    PASSWORD: secret
+    # OpenMed の細分ラベルで、共通カテゴリに意味的に包含されるもの（作者 CATEGORY_MAP 準拠）
+    FIRSTNAME: private_person
+    MIDDLENAME: private_person
+    LASTNAME: private_person
+    PREFIX: private_person
+    STREET: private_address
+    CITY: private_address
+    STATE: private_address
+    COUNTY: private_address
+    ZIPCODE: private_address
+    BUILDINGNUMBER: private_address
+    SECONDARYADDRESS: private_address
+  drop_others: true   # AGE, AMOUNT, CREDITCARD, SSN, USERNAME 等は共通 8 カテゴリ外として採点対象外（検出数は参考記録）
+  merge_adjacent_same_category: {enabled: true, max_gap_chars: 4, gap_must_be_whitespace: true}  # 作者 run_pf_hf.py と同条件（細分ラベルの連結用）。モデル比較層では ON/OFF 両方を記録
+  notes:
+    - "CREDITCARD / SSN / USERNAME は Toramon 拡張トラック候補。基本 8 カテゴリの比較には含めない。"
+    - "pf_classify は UTF-8 バイト位置を返す。コードポイント位置への変換は adapter が行う。"
+
+# T-O / T-S: 学習時に共通 8 カテゴリで教師を与える。T-S は S のラベル空間（225）を維持し alias 行で学習（S と同じ規約）か、
+# 8 カテゴリ専用ヘッドへ縮約するかを実験条件として記録する。
+model_T_O: {identity: true}
+model_T_S: {same_as: model_S}
