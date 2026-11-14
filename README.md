@@ -13,7 +13,7 @@
 [![Status](https://img.shields.io/badge/Status-ベータ・第三者監査なし-yellow)](#-セキュリティ)
 [![Toramon Shield](https://img.shields.io/badge/Toramon_Shield-日本の個人情報を守る-8A2BE2)](#-toramon-shield-について)
 
-[動作環境](#-動作環境ミニマムスペック) ・ [特長](#-特長) ・ [しくみ](#-しくみ) ・ [クイックスタート](#-クイックスタート) ・ [使い方](#-使い方) ・ [精度を測る](#-精度を測る) ・ [学習する](#-自分でモデルを学習する上級者向け) ・ [FAQ](#-よくある質問)
+[動作環境](#-動作環境ミニマムスペック) ・ [特長](#-特長) ・ [しくみ](#-しくみ) ・ [クイックスタート](#-クイックスタート) ・ [学習済みモデル](#-学習済みモデルtoramon-mask-ja-01) ・ [使い方](#-使い方) ・ [精度を測る](#-精度を測る) ・ [学習する](#-自分でモデルを学習する上級者向け) ・ [FAQ](#-よくある質問)
 
 </div>
 
@@ -213,11 +213,82 @@ TORAMON_TEST_DEVICE=cpu .venv/bin/python -m pytest -q     # CPU 版をビルド�
 
 ---
 
+## 🏆 学習済みモデル（toramon-mask-ja-01）
+
+クイックスタートで使った公開モデル（sumeshi/privacy-filter-jp）より、**ずっと精度の高い学習済みモデル** を Hugging Face で配布しています。このリポジトリの手順で、日本語の業務文書向けに追加学習したものです。
+
+| | toramon-mask-ja-01 | 公開モデル S（クイックスタート） |
+|---|---|---|
+| 最終テストの strict F1（ルール R 併用） | **0.954** | 0.733 |
+| 個人情報を 1 文字も漏らさず伏せた割合 | **96.7%** | 89.4% |
+| 個人情報のない文書を誤って伏せた割合 | **7.0%** | 93.1% |
+| 医療・金融・行政など幅広い分野の文書での F1 | **0.98** | — |
+| ファイル（q8 版） | 1.6 GB | 1.6 GB |
+| 使うメモリ（q8 版、CPU） | 約 1.7 GB | 約 1.7 GB |
+
+👉 **[huggingface.co/toramon/toramon-mask-ja-01](https://huggingface.co/toramon/toramon-mask-ja-01)**（評価の詳細、既知の弱点、学習データの出典はモデルカードにあります）
+
+### 使ってみる
+
+クイックスタートのステップ 1〜3 が終わっていれば、すぐ使えます。
+
+```bash
+# 1) ダウンロード（q8 版、1.6 GB）
+.venv/bin/hf download toramon/toramon-mask-ja-01 toramon-mask-ja-01-q8.gguf --local-dir models/toramon-mask-ja-01
+
+# 2) 動かす（--backend T-O を指定するのがポイント）
+echo "山田太郎様、お届け先は東京都千代田区丸の内1-2-3、連絡先は090-1234-5678 です。" \
+  | .venv/bin/python scripts/toramon_cli.py redact --backend T-O --device cpu \
+      --gguf models/toramon-mask-ja-01/toramon-mask-ja-01-q8.gguf
+# → [PERSON_1]様、お届け先は[ADDRESS_1]、連絡先は[PHONE_1] です。
+```
+
+以降の [使い方](#-使い方) では、最初に設定する変数を次のように変えるだけで、すべての方法（コマンド、ローカル API、ゲートウェイ）がこのモデルで動きます。
+
+```bash
+BACKEND=T-O
+GGUF=models/toramon-mask-ja-01/toramon-mask-ja-01-q8.gguf
+```
+
+> [!IMPORTANT]
+> このモデルは **必ず `--backend T-O`** で読み込んでください。`--backend S` のままだとラベルが正しく対応付けられず、精度が大きく落ちます。
+
+<details>
+<summary>📦 配布しているファイル</summary>
+
+| ファイル | 大きさ | 用途 |
+|---|---|---|
+| `toramon-mask-ja-01-q8.gguf` | 1.6 GB | **おすすめ**。CLI・API・ゲートウェイ用 |
+| `toramon-mask-ja-01-f16.gguf` | 2.8 GB | 同上（q8 との精度差は ±0.001 以内） |
+| `model.safetensors` ほか | 2.8 GB | transformers での推論や、さらに追加学習するとき |
+| `SHA256SUMS.txt` | — | ダウンロードしたファイルが壊れていないかの確認用 |
+
+ダウンロードしたファイルの確認（`OK` と表示されれば正常）:
+
+```bash
+.venv/bin/hf download toramon/toramon-mask-ja-01 SHA256SUMS.txt --local-dir models/toramon-mask-ja-01
+(cd models/toramon-mask-ja-01 && sha256sum -c --ignore-missing SHA256SUMS.txt)
+```
+
+</details>
+
+<details>
+<summary>⚠️ 知っておいてほしいこと</summary>
+
+- 評価に使ったテストは LLM で作った合成データです。実際の業務文書では精度が下がる可能性があります。
+- 個人情報を含まない文書でも、約 7% で何かを誤って伏せます（業務日付、担当者名、市区町村名など）。
+- モデル名の末尾の番号は世代です。新しいモデルは `toramon-mask-ja-02`、`-03` と番号を増やして公開します。
+
+</details>
+
+---
+
 ## 📖 使い方
 
 長いパスは変数にしておくと楽です。
 
 ```bash
+BACKEND=S      # 学習済みモデル toramon-mask-ja-01 を使う場合は T-O
 GGUF=models/sumeshi-privacy-filter-jp-GGUF/privacy-filter-jp-q8.gguf
 DEV=cpu        # GPU 版をビルドした場合は cuda
 ```
@@ -233,10 +304,10 @@ DEV=cpu        # GPU 版をビルドした場合は cuda
 
 ```bash
 # 伏せ字にした文章を出力
-cat 文書.txt | .venv/bin/python scripts/toramon_cli.py redact --backend S --device $DEV --gguf $GGUF
+cat 文書.txt | .venv/bin/python scripts/toramon_cli.py redact --backend $BACKEND --device $DEV --gguf $GGUF
 
 # どこを何として検出したかを JSON で出力（開始・終了位置、種類、確信度）
-cat 文書.txt | .venv/bin/python scripts/toramon_cli.py detect --backend S --device $DEV --gguf $GGUF
+cat 文書.txt | .venv/bin/python scripts/toramon_cli.py detect --backend $BACKEND --device $DEV --gguf $GGUF
 ```
 
 | オプション | 意味 |
@@ -244,12 +315,12 @@ cat 文書.txt | .venv/bin/python scripts/toramon_cli.py detect --backend S --de
 | `--style asterisk` | `[PERSON_1]` ではなく `****` で伏せる |
 | `--no-rules` | ルール R を使わず、モデルだけで判定する（比較用） |
 | `--threshold 0.5` | 確信度のしきい値。上げると伏せる量が減り、下げると増える |
-| `--backend T-O` / `T-S` | 自分で学習・変換したモデルを使う（[学習する](#-自分でモデルを学習する上級者向け)） |
+| `--backend T-O` / `T-S` | 学習済みモデル（[toramon-mask-ja-01](#-学習済みモデルtoramon-mask-ja-01)）や、自分で学習・変換したモデルを使う |
 
 ### ローカル API
 
 ```bash
-.venv/bin/python scripts/toramon_cli.py serve --backend S --device $DEV --gguf $GGUF --port 8765
+.venv/bin/python scripts/toramon_cli.py serve --backend $BACKEND --device $DEV --gguf $GGUF --port 8765
 ```
 
 別のターミナルから:
@@ -284,7 +355,7 @@ sequenceDiagram
 ```
 
 ```bash
-.venv/bin/python scripts/toramon_gateway.py --backend S --device $DEV --gguf $GGUF \
+.venv/bin/python scripts/toramon_gateway.py --backend $BACKEND --device $DEV --gguf $GGUF \
   --port 8787 --upstream https://api.openai.com
 
 # AI ツール側は、接続先をゲートウェイに向けるだけ（API キーは今までどおり。ゲートウェイは保存しません）
@@ -301,7 +372,7 @@ export OPENAI_BASE_URL=http://127.0.0.1:8787/v1
 
 ```bash
 .venv/bin/python scripts/mock_upstream.py --port 8799        # ターミナル 1
-.venv/bin/python scripts/toramon_gateway.py --backend S --device $DEV --gguf $GGUF \
+.venv/bin/python scripts/toramon_gateway.py --backend $BACKEND --device $DEV --gguf $GGUF \
   --port 8787 --upstream http://127.0.0.1:8799                # ターミナル 2
 ```
 
@@ -645,7 +716,7 @@ CPU 版をビルドしたのに `--device cuda` で動かしています。`--de
 | **マスキング／伏せ字** | 個人情報を `[PERSON_1]` などの記号に置き換えること |
 | **S** | 基準にする公開モデル [sumeshi/privacy-filter-jp-GGUF](https://huggingface.co/sumeshi/privacy-filter-jp-GGUF)（日本語向け）。クイックスタートで使います |
 | **O** | OpenAI が公開したモデル [openai/privacy-filter](https://huggingface.co/openai/privacy-filter)（英語中心） |
-| **T-O / T-S** | このリポジトリの手順で O / S を追加学習したモデル。重みは同梱していません |
+| **T-O / T-S** | このリポジトリの手順で O / S を追加学習したモデル。T-O 系の学習済みモデルを [toramon-mask-ja-01](#-学習済みモデルtoramon-mask-ja-01) として配布しています |
 | **GGUF** | AI モデルを 1 ファイルにまとめた形式。軽量な C++ エンジン（privacy-filter-jp.cpp）で動きます |
 | **q8 / f16** | モデルの数値の精度。q8 は軽量版、f16 は標準版 |
 | **libpf** | 推論エンジンをライブラリにしたもの。Python から GGUF モデルを呼ぶのに使います |
@@ -673,7 +744,8 @@ CPU 版をビルドしたのに `--device cuda` で動かしています。`--de
 - [x] 共通ルール R（電話・URL・API キーの補完、代表番号などの除外）
 - [x] 合成データ生成・独立レビュー・評価器・追加学習の一式
 - [x] CPU だけで動く構成（GPU 不要）
-- [ ] 学習済みモデル（T-O / T-S）の公開
+- [x] 学習済みモデルの配布（toramon-mask-ja-01）
+- [ ] 実際の業務文書での評価と、誤検知を減らした次の世代（toramon-mask-ja-02）
 - [ ] macOS / Windows でのネイティブ動作
 - [ ] ブラウザ拡張のストア公開
 - [ ] 第三者による精度・セキュリティの検証
