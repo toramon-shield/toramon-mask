@@ -215,16 +215,15 @@ TORAMON_TEST_DEVICE=cpu .venv/bin/python -m pytest -q     # CPU 版をビルド�
 
 ## 🏆 学習済みモデル（toramon-mask-ja-01）
 
-クイックスタートで使った公開モデル（sumeshi/privacy-filter-jp）より、**ずっと精度の高い学習済みモデル** を Hugging Face で配布しています。このリポジトリの手順で、日本語の業務文書向けに追加学習したものです。
+OpenAI が公開したベースモデル [openai/privacy-filter](https://huggingface.co/openai/privacy-filter) を、このリポジトリの手順で日本語の業務文書向けに追加学習したモデルを、Hugging Face で配布しています。
 
-| | toramon-mask-ja-01 | 公開モデル S（クイックスタート） |
+| 最終テスト（4,750 文書、ルール R 併用） | toramon-mask-ja-01 | ベースモデル openai/privacy-filter |
 |---|---|---|
-| 最終テストの strict F1（ルール R 併用） | **0.954** | 0.733 |
-| 個人情報を 1 文字も漏らさず伏せた割合 | **96.7%** | 89.4% |
-| 個人情報のない文書を誤って伏せた割合 | **7.0%** | 93.1% |
-| 医療・金融・行政など幅広い分野の文書での F1 | **0.98** | — |
-| ファイル（q8 版） | 1.6 GB | 1.6 GB |
-| 使うメモリ（q8 版、CPU） | 約 1.7 GB | 約 1.7 GB |
+| strict F1 | **0.954** | 0.628 |
+| 個人情報を 1 文字も漏らさず伏せた割合 | **96.7%** | 68.8% |
+| 個人情報のない文書を誤って伏せた割合 | **7.0%** | 71.8% |
+
+医療・金融・行政など幅広い分野の文書（NVIDIA Nemotron-PII-Japan）でも F1 0.98 です。q8 版はファイル 1.6 GB、CPU で使うメモリは約 1.7 GB です。
 
 👉 **[huggingface.co/toramon/toramon-mask-ja-01](https://huggingface.co/toramon/toramon-mask-ja-01)**（評価の詳細、既知の弱点、学習データの出典はモデルカードにあります）
 
@@ -278,6 +277,20 @@ GGUF=models/toramon-mask-ja-01/toramon-mask-ja-01-q8.gguf
 - 評価に使ったテストは LLM で作った合成データです。実際の業務文書では精度が下がる可能性があります。
 - 個人情報を含まない文書でも、約 7% で何かを誤って伏せます（業務日付、担当者名、市区町村名など）。
 - モデル名の末尾の番号は世代です。新しいモデルは `toramon-mask-ja-02`、`-03` と番号を増やして公開します。
+
+</details>
+
+<details>
+<summary>📋 参考：クイックスタートの日本語モデル（S）での同じテストの結果</summary>
+
+| 最終テスト（ルール R 併用） | toramon-mask-ja-01 | sumeshi/privacy-filter-jp（f16） |
+|---|---|---|
+| strict F1 | 0.954 | 0.733 |
+| 個人情報を 1 文字も漏らさず伏せた割合 | 96.7% | 89.4% |
+| 個人情報のない文書で何かを伏せた割合 | 7.0% | 93.1% |
+
+> [!NOTE]
+> sumeshi/privacy-filter-jp は、日本語の個人情報検出モデルと推論エンジン（privacy-filter-jp.cpp）を公開してくださったものです。Toramon Mask はその推論エンジンを土台にしています。このテストは Toramon Mask 独自の保護方針（会社の代表番号や業務の日付は残す、など）で正解を付けているため、別の方針で作られたモデルにとっては不利な条件です。数値はモデルの優劣を示すものではなく、方針の違いを含んだ参考値として見てください。
 
 </details>
 
@@ -714,7 +727,7 @@ CPU 版をビルドしたのに `--device cuda` で動かしています。`--de
 |---|---|
 | **PII** | Personally Identifiable Information。個人を特定できる情報 |
 | **マスキング／伏せ字** | 個人情報を `[PERSON_1]` などの記号に置き換えること |
-| **S** | 基準にする公開モデル [sumeshi/privacy-filter-jp-GGUF](https://huggingface.co/sumeshi/privacy-filter-jp-GGUF)（日本語向け）。クイックスタートで使います |
+| **S** | sumeshi さんが公開した日本語の個人情報検出モデル [sumeshi/privacy-filter-jp-GGUF](https://huggingface.co/sumeshi/privacy-filter-jp-GGUF)。クイックスタートで使います |
 | **O** | OpenAI が公開したモデル [openai/privacy-filter](https://huggingface.co/openai/privacy-filter)（英語中心） |
 | **T-O / T-S** | このリポジトリの手順で O / S を追加学習したモデル。T-O 系の学習済みモデルを [toramon-mask-ja-01](#-学習済みモデルtoramon-mask-ja-01) として配布しています |
 | **GGUF** | AI モデルを 1 ファイルにまとめた形式。軽量な C++ エンジン（privacy-filter-jp.cpp）で動きます |

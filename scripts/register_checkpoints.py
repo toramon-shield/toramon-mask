@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""基準モデル S（sumeshi 単体）を全指標で上回った学習チェックポイントを checkpoints/ に登録・保全する。
+"""比較用の公開モデル S（sumeshi 単体）と比べて全指標で良かった学習チェックポイントを checkpoints/ に登録・保全する。
   .venv/bin/python scripts/register_checkpoints.py [--gold data/dev/dev_v1_749.jsonl] [--baseline runs/dev_compare_v3/S_model_only.eval.json]
 - runs/exp_real_v*/<run>/dev_pred.jsonl（学習スクリプト内評価、閾値 0.5、単体）を gold で再採点し、S と比較。
 - 比較指標: strict micro F1（高）、全範囲保護率（高）、PII 残存文書率（低）、非対象文字マスク率（低）、負例誤検知率（低）。全て上回った run のみ登録。
