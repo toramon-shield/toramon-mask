@@ -1,0 +1,33 @@
+{
+ "bench": "../toramon/runs/plus/sets/devx610.jsonl",
+ "n": 100,
+ "seed": 0,
+ "vlm": false,
+ "conditions": {
+  "text_only": {
+   "docs": 100,
+   "entities": 601,
+   "entity_fully_masked": 0.975,
+   "pii_char_coverage": 0.9888,
+   "non_pii_char_masked": 0.0017
+  },
+  "clean": {
+   "docs": 100,
+   "entities": 601,
+   "entity_fully_masked": 0.9218,
+   "pii_char_coverage": 0.959,
+   "non_pii_char_masked": 0.0072,
+   "ms_median": 7624,
+   "ms_p90": 25297
+  },
+  "scan": {
+   "docs": 100,
+   "entities": 601,
+   "entity_fully_masked": 0.817,
+   "pii_char_coverage": 0.934,
+   "non_pii_char_masked": 0.0072,
+   "ms_median": 8211,
+   "ms_p90": 14977
+  }
+ }
+}

@@ -42,3 +42,7 @@ auth.json
 *.egg-info/
 build/
 dist/
+
+# ---- 画像評価の生データ（VLM の読み取り結果を含むため置かない） ----
+results/**/*.raw.jsonl
+results/vision/vlm_v1/

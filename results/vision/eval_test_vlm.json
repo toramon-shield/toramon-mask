@@ -1,0 +1,87 @@
+{
+ "bench": "../monju-mask/artifacts/release/bench/test.jsonl",
+ "n": 100,
+ "seed": 0,
+ "vlm": true,
+ "conditions": {
+  "text_only": {
+   "docs": 100,
+   "entities": 873,
+   "entity_fully_masked": 0.9828,
+   "pii_char_coverage": 0.9901,
+   "non_pii_char_masked": 0.0107
+  },
+  "clean/ocr": {
+   "docs": 100,
+   "entities": 873,
+   "entity_fully_masked": 0.9381,
+   "pii_char_coverage": 0.9492,
+   "non_pii_char_masked": 0.0257,
+   "ms_median": 36884,
+   "ms_p90": 87783
+  },
+  "clean/vlm_exact": {
+   "docs": 100,
+   "entities": 873,
+   "entity_fully_masked": 0.9507,
+   "pii_char_coverage": 0.9569,
+   "non_pii_char_masked": 0.074,
+   "ms_median": 36884,
+   "ms_p90": 87783
+  },
+  "clean/vlm_fuzzy": {
+   "docs": 100,
+   "entities": 873,
+   "entity_fully_masked": 0.9656,
+   "pii_char_coverage": 0.96,
+   "non_pii_char_masked": 0.0827,
+   "ms_median": 36884,
+   "ms_p90": 87783
+  },
+  "clean/vlm_fuzzy_box": {
+   "docs": 100,
+   "entities": 873,
+   "entity_fully_masked": 0.9691,
+   "pii_char_coverage": 0.9848,
+   "non_pii_char_masked": 0.0849,
+   "ms_median": 36884,
+   "ms_p90": 87783
+  },
+  "scan/ocr": {
+   "docs": 100,
+   "entities": 873,
+   "entity_fully_masked": 0.8694,
+   "pii_char_coverage": 0.9623,
+   "non_pii_char_masked": 0.0242,
+   "ms_median": 36648,
+   "ms_p90": 75644
+  },
+  "scan/vlm_exact": {
+   "docs": 100,
+   "entities": 873,
+   "entity_fully_masked": 0.8832,
+   "pii_char_coverage": 0.9698,
+   "non_pii_char_masked": 0.0637,
+   "ms_median": 36648,
+   "ms_p90": 75644
+  },
+  "scan/vlm_fuzzy": {
+   "docs": 100,
+   "entities": 873,
+   "entity_fully_masked": 0.9427,
+   "pii_char_coverage": 0.9781,
+   "non_pii_char_masked": 0.0782,
+   "ms_median": 36648,
+   "ms_p90": 75644
+  },
+  "scan/vlm_fuzzy_box": {
+   "docs": 100,
+   "entities": 873,
+   "entity_fully_masked": 0.9462,
+   "pii_char_coverage": 0.9835,
+   "non_pii_char_masked": 0.0793,
+   "ms_median": 36648,
+   "ms_p90": 75644
+  }
+ }
+}

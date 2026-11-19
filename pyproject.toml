@@ -25,6 +25,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+monju = ["onnxruntime>=1.20"]   # --backend monju（CPU 向けの小型モデル）を使うとき
+vision = ["pillow>=10.1", "pypdfium2>=4.30", "cryptography>=42"]   # ゲートウェイで画像・PDF を伏せるとき（各自の PC）
+vision-server = ["pillow>=10.1", "rapidocr>=3.4", "onnxruntime>=1.20"]   # 共用 OCR サーバー（scripts/toramon_vision_server.py）
 
 [tool.setuptools.packages.find]
 where = ["src"]

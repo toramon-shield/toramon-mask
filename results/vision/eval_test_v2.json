@@ -1,0 +1,33 @@
+{
+ "bench": "../monju-mask/artifacts/release/bench/test.jsonl",
+ "n": 100,
+ "seed": 0,
+ "vlm": false,
+ "conditions": {
+  "text_only": {
+   "docs": 100,
+   "entities": 873,
+   "entity_fully_masked": 0.9828,
+   "pii_char_coverage": 0.9901,
+   "non_pii_char_masked": 0.0107
+  },
+  "clean": {
+   "docs": 100,
+   "entities": 873,
+   "entity_fully_masked": 0.9381,
+   "pii_char_coverage": 0.9492,
+   "non_pii_char_masked": 0.0257,
+   "ms_median": 8345,
+   "ms_p90": 14516
+  },
+  "scan": {
+   "docs": 100,
+   "entities": 873,
+   "entity_fully_masked": 0.8694,
+   "pii_char_coverage": 0.9623,
+   "non_pii_char_masked": 0.0242,
+   "ms_median": 6745,
+   "ms_p90": 11266
+  }
+ }
+}

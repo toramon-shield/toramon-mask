@@ -13,7 +13,7 @@
 [![Status](https://img.shields.io/badge/Status-ベータ・第三者監査なし-yellow)](#-セキュリティ)
 [![Toramon Shield](https://img.shields.io/badge/Toramon_Shield-日本の個人情報を守る-8A2BE2)](#-toramon-shield-について)
 
-[動作環境](#-動作環境ミニマムスペック) ・ [特長](#-特長) ・ [しくみ](#-しくみ) ・ [クイックスタート](#-クイックスタート) ・ [学習済みモデル](#-学習済みモデルtoramon-mask-ja-01) ・ [使い方](#-使い方) ・ [精度を測る](#-精度を測る) ・ [学習する](#-自分でモデルを学習する上級者向け) ・ [FAQ](#-よくある質問)
+[動作環境](#-動作環境ミニマムスペック) ・ [特長](#-特長) ・ [しくみ](#-しくみ) ・ [クイックスタート](#-クイックスタート) ・ [配布モデル](#-配布モデルmonju-mask-ja-01) ・ [使い方](#-使い方) ・ [精度を測る](#-精度を測る) ・ [学習する](#-自分でモデルを学習する上級者向け) ・ [FAQ](#-よくある質問)
 
 </div>
 
@@ -78,7 +78,7 @@ DGX Spark の CPU（Arm 20 コア）で、使うコア数を制限して計測�
 | 🏢 | **仕事の情報は残す** | 会社の代表番号、共用メール（`info@` など）、納期、金額、型番は伏せません（[保護方針](docs/annotation_policy.md)） |
 | 🔁 | **元に戻せる** | ゲートウェイ経由なら、AI の返事に含まれる `[PERSON_1]` を元の名前に戻して表示します |
 | 🛑 | **鍵は送らせない** | API キーやパスワードを含む文章は、クラウドへの送信そのものを止められます |
-| 🧩 | **4 通りの使い方** | コマンド、ローカル API、OpenAI 互換ゲートウェイ、ブラウザ拡張 |
+| 🧩 | **4 通りの使い方** | コマンド、ローカル API、ゲートウェイ（OpenAI 互換・Claude Code・Codex）、ブラウザ拡張 |
 | 🎓 | **育てられる** | 自分の業務文書に合わせて追加学習し、点数で比べるための一式（合成データ生成、独立レビュー、評価器）つき |
 | 📄 | **自由に使える** | Apache-2.0。商用・社内利用、改変、再配布ができます |
 
@@ -213,86 +213,71 @@ TORAMON_TEST_DEVICE=cpu .venv/bin/python -m pytest -q     # CPU 版をビルド�
 
 ---
 
-## 🏆 学習済みモデル（toramon-mask-ja-01）
+## 🏆 配布モデル（monju-mask-ja-01）
 
-OpenAI が公開したベースモデル [openai/privacy-filter](https://huggingface.co/openai/privacy-filter) を、このリポジトリの手順で日本語の業務文書向けに追加学習したモデルを、Hugging Face で配布しています。
+CPU だけで速く動く小型モデル **Monju Mask** を、Hugging Face で配布しています。
+「三人寄れば文殊の知恵」のとおり、見方の違う小さなモデル 3 つが同じ文を同時に読み、3 つの判定（確率）を平均して決めます。GPU も、推論エンジンのビルド（クイックスタートのステップ 3）も要りません。
 
-| 最終テスト（4,750 文書、ルール R 併用） | toramon-mask-ja-01 | ベースモデル openai/privacy-filter |
-|---|---|---|
-| strict F1 | **0.954** | 0.628 |
-| 個人情報を 1 文字も漏らさず伏せた割合 | **96.7%** | 68.8% |
-| 個人情報のない文書を誤って伏せた割合 | **7.0%** | 71.8% |
+| | monju-mask-ja-01 | openai/privacy-filter | sumeshi/privacy-filter-jp |
+|---|---|---|---|
+| 約 900 字の文書 1 件（CPU 4 スレッド） | **16.8 ms** | 442.3 ms | 377.1 ms |
+| 同（CPU 1 スレッド） | **40.7 ms** | 1,424.5 ms | 1,458.9 ms |
+| ファイルの大きさ | **234 MB** | 1.6 GB（8 ビット） | 1.6 GB（8 ビット） |
+| 業務文書 1,000 件（Monju PII Bench）の strict F1 | **0.943** | 0.580 | 0.662 |
+| 人が書いた短文 106 件（privacy-filter-jp ベンチ v2）の strict F1 | 0.833 | 0.573 | **0.894** |
 
-医療・金融・行政など幅広い分野の文書（NVIDIA Nemotron-PII-Japan）でも F1 0.98 です。q8 版はファイル 1.6 GB、CPU で使うメモリは約 1.7 GB です。
+速度は Arm CPU（Cortex-X925）での実測、精度はルール R 併用の値です。どのモデルも、自分の作者が作ったベンチで最も良い成績になります。
+Monju でも、業務文書の 17% に何らかの個人情報が残り、個人情報のない文書の 22% で誤って何かを伏せます。**匿名化を保証するものではありません。**
 
-👉 **[huggingface.co/toramon/toramon-mask-ja-01](https://huggingface.co/toramon/toramon-mask-ja-01)**（評価の詳細、既知の弱点、学習データの出典はモデルカードにあります）
+👉 **[huggingface.co/toramon/monju-mask-ja-01](https://huggingface.co/toramon/monju-mask-ja-01)**（評価の詳細、既知の弱点、学習データの出典はモデルカードにあります）
+評価に使った業務文書 1,000 件は **[Monju PII Bench](https://huggingface.co/datasets/toramon/monju-pii-bench)** として公開しています。
 
 ### 使ってみる
 
-クイックスタートのステップ 1〜3 が終わっていれば、すぐ使えます。
+クイックスタートのステップ 1〜2 が終わっていれば使えます。
 
 ```bash
-# 1) ダウンロード（q8 版、1.6 GB）
-.venv/bin/hf download toramon/toramon-mask-ja-01 toramon-mask-ja-01-q8.gguf --local-dir models/toramon-mask-ja-01
+# 1) 追加のライブラリを入れる（ONNX Runtime）
+uv pip install --python .venv/bin/python onnxruntime
 
-# 2) 動かす（--backend T-O を指定するのがポイント）
+# 2) ダウンロード（約 230 MB）
+.venv/bin/hf download toramon/monju-mask-ja-01 --local-dir models/monju-mask-ja-01
+
+# 3) 動かす
 echo "山田太郎様、お届け先は東京都千代田区丸の内1-2-3、連絡先は090-1234-5678 です。" \
-  | .venv/bin/python scripts/toramon_cli.py redact --backend T-O --device cpu \
-      --gguf models/toramon-mask-ja-01/toramon-mask-ja-01-q8.gguf
+  | .venv/bin/python scripts/toramon_cli.py redact --backend monju --model-dir models/monju-mask-ja-01
 # → [PERSON_1]様、お届け先は[ADDRESS_1]、連絡先は[PHONE_1] です。
 ```
 
 以降の [使い方](#-使い方) では、最初に設定する変数を次のように変えるだけで、すべての方法（コマンド、ローカル API、ゲートウェイ）がこのモデルで動きます。
 
 ```bash
-BACKEND=T-O
-GGUF=models/toramon-mask-ja-01/toramon-mask-ja-01-q8.gguf
+BACKEND=monju
+GGUF=models/monju-mask-ja-01      # Monju はフォルダを指定します
 ```
 
-> [!IMPORTANT]
-> このモデルは **必ず `--backend T-O`** で読み込んでください。`--backend S` のままだとラベルが正しく対応付けられず、精度が大きく落ちます。
+使う CPU スレッド数は `--threads`（既定 4）で変えられます。
 
-<details>
-<summary>📦 配布しているファイル</summary>
+### 🔁 モデルを切り替える
 
-| ファイル | 大きさ | 用途 |
-|---|---|---|
-| `toramon-mask-ja-01-q8.gguf` | 1.6 GB | **おすすめ**。CLI・API・ゲートウェイ用 |
-| `toramon-mask-ja-01-f16.gguf` | 2.8 GB | 同上（q8 との精度差は ±0.001 以内） |
-| `model.safetensors` ほか | 2.8 GB | transformers での推論や、さらに追加学習するとき |
-| `SHA256SUMS.txt` | — | ダウンロードしたファイルが壊れていないかの確認用 |
+Toramon Mask は、検出に使うモデルを `--backend` で切り替えられます。ルール、伏せ字化、ローカル API、ゲートウェイはどのモデルでも同じです。
 
-ダウンロードしたファイルの確認（`OK` と表示されれば正常）:
+| `--backend` | モデル | 指定するもの | 必要なもの |
+|---|---|---|---|
+| `monju` | [toramon/monju-mask-ja-01](https://huggingface.co/toramon/monju-mask-ja-01)（小型、CPU 向け） | `--model-dir` にフォルダ | onnxruntime |
+| `S` | [sumeshi/privacy-filter-jp-GGUF](https://huggingface.co/sumeshi/privacy-filter-jp-GGUF) | `--gguf` にファイル | libpf（ステップ 3） |
+| `T-O` / `T-S` | このリポジトリの手順で自分で追加学習したモデル | `--gguf` か `--checkpoint` | libpf か PyTorch |
+| `O` | [openai/privacy-filter](https://huggingface.co/openai/privacy-filter)（英語中心） | `--checkpoint` | PyTorch と公式ランタイム |
 
-```bash
-.venv/bin/hf download toramon/toramon-mask-ja-01 SHA256SUMS.txt --local-dir models/toramon-mask-ja-01
-(cd models/toramon-mask-ja-01 && sha256sum -c --ignore-missing SHA256SUMS.txt)
+Python から使う場合も同じで、`.detect(text)` を持つ検出器を `ToramonFilter` に渡すだけです。
+
+```python
+from toramon.adapters.monju_onnx import load_monju
+from toramon.filter import ToramonFilter
+
+filt = ToramonFilter(load_monju("models/monju-mask-ja-01", threads=4), "monju-mask-ja-01")
+print(filt.redact("山田太郎様の電話は090-1234-5678です。").redacted_text)
 ```
-
-</details>
-
-<details>
-<summary>⚠️ 知っておいてほしいこと</summary>
-
-- 評価に使ったテストは LLM で作った合成データです。実際の業務文書では精度が下がる可能性があります。
-- 個人情報を含まない文書でも、約 7% で何かを誤って伏せます（業務日付、担当者名、市区町村名など）。
-- モデル名の末尾の番号は世代です。新しいモデルは `toramon-mask-ja-02`、`-03` と番号を増やして公開します。
-
-</details>
-
-<details>
-<summary>📋 参考：クイックスタートの日本語モデル（S）での同じテストの結果</summary>
-
-| 最終テスト（ルール R 併用） | toramon-mask-ja-01 | sumeshi/privacy-filter-jp（f16） |
-|---|---|---|
-| strict F1 | 0.954 | 0.733 |
-| 個人情報を 1 文字も漏らさず伏せた割合 | 96.7% | 89.4% |
-| 個人情報のない文書で何かを伏せた割合 | 7.0% | 93.1% |
-
-> [!NOTE]
-> sumeshi/privacy-filter-jp は、日本語の個人情報検出モデルと推論エンジン（privacy-filter-jp.cpp）を公開してくださったものです。Toramon Mask はその推論エンジンを土台にしています。このテストは Toramon Mask 独自の保護方針（会社の代表番号や業務の日付は残す、など）で正解を付けているため、別の方針で作られたモデルにとっては不利な条件です。数値はモデルの優劣を示すものではなく、方針の違いを含んだ参考値として見てください。
-
-</details>
 
 ---
 
@@ -301,7 +286,7 @@ GGUF=models/toramon-mask-ja-01/toramon-mask-ja-01-q8.gguf
 長いパスは変数にしておくと楽です。
 
 ```bash
-BACKEND=S      # 学習済みモデル toramon-mask-ja-01 を使う場合は T-O
+BACKEND=S      # 配布モデル monju-mask-ja-01 を使う場合は monju（GGUF にはフォルダを指定）
 GGUF=models/sumeshi-privacy-filter-jp-GGUF/privacy-filter-jp-q8.gguf
 DEV=cpu        # GPU 版をビルドした場合は cuda
 ```
@@ -328,7 +313,8 @@ cat 文書.txt | .venv/bin/python scripts/toramon_cli.py detect --backend $BACKE
 | `--style asterisk` | `[PERSON_1]` ではなく `****` で伏せる |
 | `--no-rules` | ルール R を使わず、モデルだけで判定する（比較用） |
 | `--threshold 0.5` | 確信度のしきい値。上げると伏せる量が減り、下げると増える |
-| `--backend T-O` / `T-S` | 学習済みモデル（[toramon-mask-ja-01](#-学習済みモデルtoramon-mask-ja-01)）や、自分で学習・変換したモデルを使う |
+| `--backend monju` | 配布モデル（[monju-mask-ja-01](#-配布モデルmonju-mask-ja-01)）を使う。`--model-dir` にフォルダを指定 |
+| `--backend T-O` / `T-S` | 自分で学習・変換したモデルを使う |
 
 ### ローカル API
 
@@ -348,7 +334,8 @@ curl -s -X POST http://127.0.0.1:8765/redact -H 'Content-Type: application/json'
 |---|---|
 | `GET /health` | 動作確認 |
 | `POST /detect` | 検出結果（範囲の一覧）を返す |
-| `POST /redact` | 伏せ字にした文章と検出結果を返す |
+| `POST /redact` | 伏せ字にした文章と検出結果を返す（`"restorable": true` で復元用の鍵も返す。下の「伏せた値を元に戻す」） |
+| `POST /restore` | 鍵を使って元に戻す（`serve --allow-restore` のときだけ） |
 
 既定では、自分の PC（`127.0.0.1`）からしか接続できません。
 
@@ -392,6 +379,227 @@ export OPENAI_BASE_URL=http://127.0.0.1:8787/v1
 </details>
 
 ブラウザ拡張、クリップボード常駐ツール、社内配布の方法は [docs/gateway_README.md](docs/gateway_README.md) を見てください。
+
+### Claude Code・Codex の送受信を伏せる
+
+コーディングエージェントも、接続先をゲートウェイに向けるだけで使えます。エージェントが送る会話（指示、ファイルの中身、コマンドの結果）は伏せ字にして送られます。
+返ってきた答えとツールの呼び出し（ファイルへの書き込みやコマンド）は、手元で元の値に戻ってから実行されます。ストリーミングの途中で `[PERSON_1]` が 2 つに分かれて届いても、つなぎ直して戻します。
+
+ここでは配布モデル Monju Mask（[🏆 配布モデル](#-配布モデルmonju-mask-ja-01)）を使います。CPU だけで、1 回の要求あたり数十〜数百ミリ秒です。
+
+**Claude Code**（Anthropic のログインでも API キーでも同じ）
+
+```bash
+# ターミナル 1: ゲートウェイ
+.venv/bin/python scripts/toramon_gateway.py --backend monju --model-dir models/monju-mask-ja-01 \
+  --port 8787 --upstream https://api.anthropic.com --block-labels ""
+
+# ターミナル 2: Claude Code
+ANTHROPIC_BASE_URL=http://127.0.0.1:8787 claude
+```
+
+いつも通すなら、`~/.claude/settings.json` に書いておきます。
+
+```json
+{ "env": { "ANTHROPIC_BASE_URL": "http://127.0.0.1:8787" } }
+```
+
+**Codex**（ChatGPT でログインしている場合）
+
+```bash
+# ターミナル 1: ゲートウェイ（送信先は chatgpt.com）
+.venv/bin/python scripts/toramon_gateway.py --backend monju --model-dir models/monju-mask-ja-01 \
+  --port 8788 --upstream https://chatgpt.com --block-labels ""
+```
+
+`~/.codex/config.toml` に追記します。
+
+```toml
+model_provider = "toramon"
+
+[model_providers.toramon]
+name = "Toramon Gateway"
+base_url = "http://127.0.0.1:8788/backend-api/codex"
+wire_api = "responses"
+requires_openai_auth = true    # ChatGPT のログインをそのまま使う
+```
+
+OpenAI の API キーで使っている場合は、ゲートウェイを `--upstream https://api.openai.com` で起動し、`base_url = "http://127.0.0.1:8788/v1"` と `env_key = "OPENAI_API_KEY"` にします（`requires_openai_auth` は不要）。
+
+**確かめ方**
+
+```bash
+# 上流へ実際に送った本文（伏せた後）をフォルダに残す
+.venv/bin/python scripts/toramon_gateway.py ... --dump-dir /tmp/toramon-dump
+grep -l "佐々木花子" /tmp/toramon-dump/*.json || echo "送信本文に名前は含まれていません"
+```
+
+2026-11-18 に、Claude Code 2.1.327 と Codex（ChatGPT ログイン）で次のことを確かめました。指示に入れた架空の氏名・電話番号は、上流へ送った本文には現れず、`[PERSON_1]`・`[PHONE_1]` になっていました。
+答えの表示と、エージェントが書いたファイルの中身は、元の氏名・電話番号に戻っていました。
+
+| | Claude Code | Codex |
+|---|---|---|
+| 1 回の要求で調べた文字数 | 約 1.9 万〜2.8 万字 | 約 8.4 万字 |
+| 伏せる処理の時間（初回 / 2 回目以降） | 114〜214 ms / 3〜4 ms | 1,003 ms / 15 ms |
+
+エージェントは毎回、会話の履歴全体を送り直します。ゲートウェイは一度調べた文章の結果を覚えておくので、2 回目以降は新しく増えた部分だけを調べます。
+
+知っておいてほしいこと:
+
+- **伏せる範囲**: 会話（指示、ファイル、コマンド結果、ツールの入出力）を伏せます。エージェントのシステムプロンプトとツールの定義は伏せません（`--mask-system` で伏せます）。思考（thinking / reasoning）は改ざん検知の署名がついているので、そのまま通します。
+- **誤検知**: Codex が自動で付ける環境情報の中のハッシュ値や ID も、電話番号や秘密情報として伏せられることがあります。答えとツール呼び出しでは元に戻るので、作業は止まりません。
+- **`--block-labels ""` を付ける理由**: 既定の `secret` のままだと、秘密情報らしい文字列（上のハッシュ値など）が 1 つでも含まれた要求を送らずに止めます。エージェントでは会話全体が毎回送られるので、一度止まると先へ進めなくなります。止めたい場合は既定のまま使い、`/admin` で件数を確かめてください。
+- **送らないものは守れない**: ゲートウェイを通らない通信（Web 検索など、ほかのサービスへの接続）は伏せません。
+- **画像・PDF の添付**: 既定ではそのまま送ります。伏せるには、次の「画像・PDF も伏せる」の設定が必要です。
+
+### 画像・PDF も伏せる（任意、共用サーバー）
+
+画像の文字を読む（OCR）処理は重いので、社内の共用サーバー 1 台に任せます。**個人情報かどうかの判定、塗りつぶし、元に戻す対応表は、これまでどおり各自の PC のゲートウェイで行います。** 共用サーバーは画像を受け取り、読んだ文字と位置を返すだけで、何も保存しません。
+
+```
+各自の PC（ゲートウェイ）                       共用サーバー（toramon_vision_server.py）
+  添付の画像・PDF を見つける
+  PDF は 1 ページずつ画像にする
+  画像 ──────── HTTPS + 利用者トークン ───────→  OCR（文字と 1 文字ごとの位置）
+       ←───────────────────────────────────   （保存しない・ログは件数と時間だけ）
+  Monju で判定し、該当の位置を黒く塗って [PERSON_1] などを書き込む
+  （文章と同じ番号。AI が答えで [PERSON_1] と書けば元に戻る）
+  伏せた画像・PDF だけをクラウド AI へ
+```
+
+**共用サーバーの準備**（管理者が 1 回だけ）
+
+```bash
+# OCR に使うライブラリ（初回の起動時に PP-OCRv5 のモデル約 170 MB を自動で取得します）
+uv pip install --python .venv/bin/python pillow rapidocr onnxruntime
+
+# 利用者ごとにトークンを発行する（表示は 1 回だけ。ファイルにはハッシュ値だけが残ります）
+.venv/bin/python scripts/toramon_vision_server.py --tokens /etc/toramon/vision_tokens.txt --add-user sato
+
+# 起動する（社内ネットワークに出すときは TLS が必須。証明書がないと起動しません）
+.venv/bin/python scripts/toramon_vision_server.py --tokens /etc/toramon/vision_tokens.txt \
+  --host 0.0.0.0 --port 8790 --tls-cert server.crt --tls-key server.key --workers 4 --threads 4
+```
+
+**各自の PC の設定**
+
+```bash
+uv pip install --python .venv/bin/python pillow pypdfium2 cryptography
+echo "<発行されたトークン>" > ~/.toramon/vision_token && chmod 600 ~/.toramon/vision_token
+
+.venv/bin/python scripts/toramon_gateway.py --backend monju --model-dir models/monju-mask-ja-01 \
+  --upstream https://api.anthropic.com --port 8787 --block-labels "" \
+  --vision-url https://vision.社内.example:8790 --vision-token-file ~/.toramon/vision_token
+```
+
+`--vision-url` を付けると、添付は既定で「伏せて送る」になります。
+
+| 添付の種類 | 扱い |
+|---|---|
+| 画像（PNG・JPEG・WebP など） | OCR で読み、個人情報の位置を塗ります。撮影場所（GPS）などの付帯情報は消えます |
+| 文字情報のある PDF | 文字と位置は PDF から直接読みます（共用サーバーは使いません）。ページの中に画像があれば、そこは OCR で読みます |
+| スキャンした PDF | 全ページを OCR で読みます |
+| 出力の PDF | 塗った後のページ画像だけで作り直します。元の文字情報・注釈・作成者・埋め込みファイルは残りません |
+| URL やファイル ID だけの添付 | 中身を確かめられないので、要求を止めます |
+| 確かめられなかったとき（サーバー停止、壊れたファイル、30 ページ超など） | 要求を止めます（`--vision-on-fail drop` にすると、添付を外して送ります） |
+
+オプション: `--attachments drop`（添付は常に外す）、`--attachments block`（添付があれば止める）、`--pdf-max-pages`（既定 30）。
+
+**高精度オプション（VLM）**: 共用サーバーに、画像を読める AI（OpenAI 互換の API で動く公開モデル。vLLM など）を同じサーバー内で動かし、`--vlm-url http://127.0.0.1:8000/v1 --vlm-model <モデル名>` で指定します。ゲートウェイに `--vision-vlm` を付けると、OCR に加えてその AI にも「写っている個人情報」を答えさせ、OCR が読み落とした手書きの文字や写真の中の文字も塗ります。画像を外へ出さないよう、VLM は共用サーバーの中（ループバック）にしか置けません。
+
+**速さ**: OCR は CPU で 1 ページあたり数秒かかります（下の測定を参照）。エージェントは毎回、会話全体（添付を含む）を送り直すので、ゲートウェイは OCR の結果を 30 分だけ覚えておきます（`--vision-cache-ttl`）。覚えておく中身は **元の画像を持っている人にしか読めない形** で暗号化しています（鍵は画像そのもののハッシュから作るため、メモリを覗いても元の画像がなければ読めません）。
+
+**精度**（文書を A4・150 dpi の画像に描いて測定。まず VLM なし。`scripts/eval_vision.py`、結果は `results/vision/`）
+
+「すべて塗られた」は、個人情報 1 件の文字が 1 文字も残らず塗られた割合です（1 文字でも見えていれば漏れと数えます）。
+
+| データ | 条件 | すべて塗られた | 個人情報の文字のうち塗られた割合 | 個人情報でない文字を塗った割合 | 1 枚の処理時間（中央値） |
+|---|---|---|---|---|---|
+| Monju PII Bench（100 文書・873 件） | 文章を直接判定（画像なし、上限の目安） | 98.3% | 99.0% | 1.1% | — |
+| | きれいな画像 | 93.8% | 94.9% | 2.6% | 8.3 秒 |
+| | スキャン風（傾き・ぼかし・JPEG・ノイズ） | 86.9% | 96.2% | 2.4% | 6.7 秒 |
+| 学習・調整に使っていない社内データ devx（100 文書・601 件） | 文章を直接判定 | 97.5% | 98.9% | 0.2% | — |
+| | きれいな画像 | 92.2% | 95.9% | 0.7% | 7.6 秒 |
+| | スキャン風 | 81.7% | 93.4% | 0.7% | 8.2 秒 |
+
+処理時間は共用サーバーの CPU（4 本並列）で測ったものです。
+
+- 取りこぼしの主な原因は OCR の読み違いです。たとえば「〒」を「亍」と、「フリガナ」を「リガナ」と読んでいました。スキャン風の画像ほど増えます。
+- 一部の手直しは、Monju PII Bench での取りこぼしを見てから入れました（OCR が落とした語の間の空白を戻す、行の折り返しをつなぐ、よく取り違える文字を直す）。手直しの前の「すべて塗られた」は、きれいな画像で 91.2%、スキャン風で 85.1% でした。devx は手直しの後に初めて測った数字です。
+**VLM を足したときの精度**（Qwen3-VL-8B-Instruct を vLLM で動かして測定。同じ 100 文書。結果は `results/vision/eval_*_vlm.json`）
+
+| データ | 条件 | 塗り方 | すべて塗られた | 個人情報の文字のうち塗られた割合 | 個人情報でない文字を塗った割合 |
+|---|---|---|---|---|---|
+| Monju PII Bench | きれいな画像 | OCR だけ | 93.8% | 94.9% | 2.6% |
+| | | ＋VLM | 96.9% | 98.5% | 8.5% |
+| | スキャン風 | OCR だけ | 86.9% | 96.2% | 2.4% |
+| | | ＋VLM | 94.6% | 98.4% | 7.9% |
+| devx | きれいな画像 | OCR だけ | 92.2% | 95.9% | 0.7% |
+| | | ＋VLM | 96.8% | 98.3% | 4.0% |
+| | スキャン風 | OCR だけ | 81.7% | 93.4% | 0.7% |
+| | | ＋VLM | 93.7% | 98.0% | 4.5% |
+
+「＋VLM」は、VLM が答えた文字列を OCR の文字列からあいまい一致で探して塗り、見つからなければ VLM が返した位置を塗る方式です（ゲートウェイの既定）。
+
+- 取りこぼしは大きく減りますが、個人情報でない文字を塗る量は 3〜6 倍に増えます（VLM が会社名や品名を個人情報と答えることがあるため）。
+- 1 枚の処理時間は、GPU 1 枚の上で 4 枚同時に処理して中央値 33〜37 秒、遅いもので 60〜90 秒でした（順番待ちを含む）。OCR だけのときの数倍です。
+- 400 枚のうち VLM が失敗したのは 1 枚で、そのときは OCR だけで塗りました（`--vision-vlm-required` を付けると、失敗時は添付を止めます）。何も答えなかった画像は約 1 割ありました。
+- VLM への指示文は、devx での 1 回目の測定の答えを見てから直しました（答えるべき種類の名前を指示文からそのまま写してしまい、正しい答えを捨てていたため）。上の表は直した後の数字です。
+
+- **画像では文章ほど確実には伏せられません。** 機密性の高い書類は、画像ではなく文章で渡すか、`--attachments block` で添付を止めることを勧めます。
+
+### 伏せた値を元に戻す（API・CLI、任意）
+
+ゲートウェイ経由の AI の答えは、自動で元の値に戻ります。自分で `/redact` や CLI を使って伏せ、別の場所で処理した結果を元に戻したいときは、次の仕組みを使います。**既定では無効**で、起動時に有効にしたときだけ使えます。
+
+Toramon Mask は個人情報を持ち続けない作りです。そのため元に戻すための対応表（`[PERSON_1]` ↔ 元の値）も、次の決まりで扱います。
+
+| 決まり | 内容 |
+|---|---|
+| 置き場所 | ゲートウェイか API のメモリの中だけ。ディスク・監査ログには書きません |
+| 渡すもの | 対応表そのものは返さず、推測できない使い捨ての鍵（`restore_token`、256 ビットの乱数）だけを返します |
+| 消えるとき | **1 回元に戻したとき**か、**期限（既定 60 秒、上限 60 秒）が来たとき**の早い方 |
+| 期限切れ・使用済みのとき | 元に戻さず、**伏せたままの文章**を返します（HTTP 410、CLI は終了コード 3）。期限切れ・使用済み・存在しない鍵は区別しません |
+| 待ち受け先 | `127.0.0.1` などのループバックだけ。ほかのアドレスで有効にしようとすると起動しません |
+| その他 | 応答に `Cache-Control: no-store` を付けます。件数の上限（1,024 件）を超えたら古いものから消します（消えた分は伏せたままになります） |
+
+**CLI だけで完結させる（`run`）**。伏せた文章をコマンドの標準入力へ渡し、コマンドの出力を元に戻して表示します。対応表は CLI のメモリの中だけにあり、コマンドが終わって元に戻した時点か、`--ttl` 秒（既定 60）が来た時点で消えます。コマンドが期限内に終わらなかったときは、伏せたまま表示します。
+
+```bash
+cat 依頼文.txt | .venv/bin/python scripts/toramon_cli.py run --backend monju --model-dir models/monju-mask-ja-01 \
+  -- <伏せた文章を標準入力で受け取って AI に送るコマンド>
+# 例: 「佐々木花子さん（090-1234-5678）に見積書を…」
+#   コマンドが受け取る: [PERSON_1]さん（[PHONE_1]）に見積書を…
+#   画面に出る:         佐々木花子さん（090-1234-5678）に見積書を…
+```
+
+**API に預けて、あとで戻す**。ゲートウェイは `--allow-restore-api`、ローカル API は `serve --allow-restore` で有効になります（`--restore-ttl` / `--ttl` で 60 秒より短くできます）。
+
+```bash
+# 伏せる（restorable: true を付けると restore_token が返る）
+curl -s -X POST http://127.0.0.1:8765/redact -H 'Content-Type: application/json' \
+  -d '{"text":"佐藤花子さんの電話は080-1111-2222です。","restorable":true}'
+# → {"redacted_text":"[PERSON_1]さんの電話は[PHONE_1]です。", "restore_token":"…", "expires_in":60, ...}
+
+# 60 秒以内に、AI の答えなどを元に戻す（鍵はこの 1 回で消える）
+curl -s -X POST http://127.0.0.1:8765/restore -H 'Content-Type: application/json' \
+  -d '{"restore_token":"…","text":"[PERSON_1]様へ折り返しは[PHONE_1]まで"}'
+# → {"text":"佐藤花子様へ折り返しは080-1111-2222まで", "restored":true, "replaced":2}
+# 期限切れ・使用済み → HTTP 410 {"text":"[PERSON_1]様へ…", "restored":false, "reason":"expired_or_used"}
+
+# 使わなくなったら、期限を待たずに消せる
+curl -s -X POST http://127.0.0.1:8765/restore -H 'Content-Type: application/json' -d '{"restore_token":"…","discard":true}'
+```
+
+CLI からも同じことができます（`--server` に起動中の API かゲートウェイを指定）。
+
+```bash
+echo "佐藤花子さんの電話は080-1111-2222です。" | .venv/bin/python scripts/toramon_cli.py redact --server http://127.0.0.1:8765 --restorable
+#   標準出力: 伏せた文章 / 標準エラー: restore_token=… expires_in=60
+echo "[PERSON_1]様へ" | .venv/bin/python scripts/toramon_cli.py restore --server http://127.0.0.1:8765 --token <restore_token>
+```
+
+注意: `restore_token` を持っている人は、期限内なら 1 回だけ元の値を取り出せます。ログやチャットに貼らないでください。AI がプレースホルダの形を変えた場合（括弧を落とす、言い換えるなど）は、その部分は元に戻りません。
 
 ### Python から使う
 
@@ -653,6 +861,9 @@ toramon-mask/
 | API キーやパスワードを含む要求の送信を止める（ゲートウェイ） | ゲートウェイを通さずに送った文章 |
 
 - ゲートウェイの監査ログ（既定 `~/.toramon/gateway_audit.jsonl`）には件数と種類だけを記録し、原文は保存しません。
+- ゲートウェイが応答を元に戻すための対応表は、その要求の応答を返し終えた時点で消します。検出結果の使い回し（キャッシュ）は、起動ごとの乱数鍵で作った文章の HMAC と位置・ラベルだけを持ち、原文は持ちません。
+- 復元 API（任意）の対応表は、メモリに最長 60 秒、1 回使えば消えます（「伏せた値を元に戻す」）。
+- 画像の共用 OCR サーバー（任意）は、画像も読んだ文字も保存しません。利用者ごとのトークンと TLS が必須で、個人情報の判定と対応表は各自の PC に残ります。
 - API キーなどは **環境変数で渡し**、リポジトリにコミットしないでください（`.env` や `*.key` は `.gitignore` 済みです）。
 - テストやルールに含まれる `sk-test-...` や `AKIA...EXAMPLE` は、すべて **架空のダミー** です。
 
@@ -729,7 +940,7 @@ CPU 版をビルドしたのに `--device cuda` で動かしています。`--de
 | **マスキング／伏せ字** | 個人情報を `[PERSON_1]` などの記号に置き換えること |
 | **S** | sumeshi さんが公開した日本語の個人情報検出モデル [sumeshi/privacy-filter-jp-GGUF](https://huggingface.co/sumeshi/privacy-filter-jp-GGUF)。クイックスタートで使います |
 | **O** | OpenAI が公開したモデル [openai/privacy-filter](https://huggingface.co/openai/privacy-filter)（英語中心） |
-| **T-O / T-S** | このリポジトリの手順で O / S を追加学習したモデル。T-O 系の学習済みモデルを [toramon-mask-ja-01](#-学習済みモデルtoramon-mask-ja-01) として配布しています |
+| **T-O / T-S** | このリポジトリの手順で O / S を追加学習したモデル。配布はしていません（自分で学習する手順は「自分でモデルを学習する」を参照） |
 | **GGUF** | AI モデルを 1 ファイルにまとめた形式。軽量な C++ エンジン（privacy-filter-jp.cpp）で動きます |
 | **q8 / f16** | モデルの数値の精度。q8 は軽量版、f16 は標準版 |
 | **libpf** | 推論エンジンをライブラリにしたもの。Python から GGUF モデルを呼ぶのに使います |
@@ -754,10 +965,11 @@ CPU 版をビルドしたのに `--device cuda` で動かしています。`--de
 ## 🗺️ ロードマップ
 
 - [x] CLI・ローカル API・OpenAI 互換ゲートウェイ
+- [x] Claude Code・Codex の送受信を伏せるゲートウェイ（Anthropic Messages、ストリーミング応答の復元）
 - [x] 共通ルール R（電話・URL・API キーの補完、代表番号などの除外）
 - [x] 合成データ生成・独立レビュー・評価器・追加学習の一式
 - [x] CPU だけで動く構成（GPU 不要）
-- [x] 学習済みモデルの配布（toramon-mask-ja-01）
+- [x] CPU 向け小型モデルの配布（monju-mask-ja-01）
 - [ ] 実際の業務文書での評価と、誤検知を減らした次の世代（toramon-mask-ja-02）
 - [ ] macOS / Windows でのネイティブ動作
 - [ ] ブラウザ拡張のストア公開

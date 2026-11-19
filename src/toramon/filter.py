@@ -103,12 +103,12 @@ class ToramonFilter:
         out_spans = [{"start": s.start, "end": s.end, "label": s.label, "source": s.source, "score": s.score} for s in spans]
         return FilterResult("ok", out_spans, None, self.model_version, self.rules_version, pol.version, elapsed, counts=counts)
 
-    def redact(self, text: str, policy: Policy | None = None) -> FilterResult:
+    def redact(self, text: str, policy: Policy | None = None, mapping: dict | None = None) -> FilterResult:
         pol = policy or self.policy
         res = self.detect(text, pol)
         if res.status != "ok":
             return res
         spans = [Span(d["start"], d["end"], d["label"], text[d["start"]:d["end"]], "MASK", f"{d['label']}:{text[d['start']:d['end']]}") for d in res.spans]
         # 同一文書内の同一文字列は同じ番号（同姓同名の別人は統合しない: 文字列が同じ場合に限って同一視する）
-        res.redacted_text = _redact(text, spans, style=pol.placeholder_style, keep_entity_ids=True)
+        res.redacted_text = _redact(text, spans, style=pol.placeholder_style, keep_entity_ids=True, mapping=mapping)
         return res

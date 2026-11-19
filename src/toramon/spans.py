@@ -121,13 +121,14 @@ def cp_to_byte_table(text: str) -> list[int]:
 # ---------------------------------------------------------------------------
 # 置換（検出とは分離）
 # ---------------------------------------------------------------------------
-def redact(text: str, spans: Sequence[Span], style: str = "label", keep_entity_ids: bool = True) -> str:
+def redact(text: str, spans: Sequence[Span], style: str = "label", keep_entity_ids: bool = True, mapping: dict | None = None) -> str:
     """spans（重なりなし・MASK のみ）をプレースホルダへ置換する。
 
     style:
       "label"     -> [PERSON] 等（同一 entity_id は同じ番号: [PERSON_1]）
       "asterisk"  -> ***
     非対象文字列は一切書き換えない。
+    mapping に辞書を渡すと、番号つきプレースホルダと元の値の対応を書き込む（復元 API 用。呼び出し側で短時間だけ持つ）。
     """
     placeholder_names = {
         "private_person": "PERSON",
@@ -159,6 +160,8 @@ def redact(text: str, spans: Sequence[Span], style: str = "label", keep_entity_i
                     counters[name] = counters.get(name, 0) + 1
                     ids[k] = counters[name]
                 pieces.append(f"[{name}_{ids[k]}]")
+                if mapping is not None:
+                    mapping[f"[{name}_{ids[k]}]"] = text[s.start : s.end]
             else:
                 pieces.append(f"[{name}]")
         cursor = s.end
